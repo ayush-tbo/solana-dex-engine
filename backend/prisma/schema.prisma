@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDING
+  ROUTING
+  BUILDING
+  SUBMITTED
+  CONFIRMED
+  FAILED
+}
+
+enum DexType {
+  RAYDIUM
+  METEORA
+}
+
+model Order {
+  id           String      @id @default(uuid()) @db.Uuid
+  orderId      String      @unique @map("order_id") @db.VarChar(255)
+  userWallet   String      @map("user_wallet") @db.VarChar(255)
+  tokenIn      String      @map("token_in") @db.VarChar(255)
+  tokenOut     String      @map("token_out") @db.VarChar(255)
+  amountIn     BigInt      @map("amount_in")
+  amountOut    BigInt?     @map("amount_out")
+  status       OrderStatus
+  selectedDex  DexType?    @map("selected_dex")
+  executedPrice Decimal?   @map("executed_price") @db.Decimal(20, 8)
+  txHash       String?     @map("tx_hash") @db.VarChar(255)
+  slippage     Decimal     @db.Decimal(5, 4)
+  errorMessage String?     @map("error_message") @db.Text
+  retryCount   Int         @default(0) @map("retry_count")
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  quotes       QuoteHistory[]
+
+  @@index([orderId])
+  @@index([userWallet])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@index([txHash])
+  @@map("orders")
+}
+
+model QuoteHistory {
+  id           String   @id @default(uuid()) @db.Uuid
+  orderId      String   @map("order_id") @db.VarChar(255)
+  dex          DexType
+  inputAmount  BigInt   @map("input_amount")
+  outputAmount BigInt   @map("output_amount")
+  price        Decimal  @db.Decimal(20, 8)
+  fee          Decimal? @db.Decimal(20, 8)
+  poolId       String?  @map("pool_id") @db.VarChar(255)
+  wasSelected  Boolean  @default(false) @map("was_selected")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  order        Order    @relation(fields: [orderId], references: [orderId], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([createdAt(sort: Desc)])
+  @@map("quote_history")
+}
