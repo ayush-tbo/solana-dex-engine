@@ -31,6 +31,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@fastify/cors": "^8.5.0",
+    "@fastify/static": "^6.12.0",
     "@fastify/websocket": "^10.0.1",
     "@prisma/client": "^5.20.0",
     "@raydium-io/raydium-sdk-v2": "^0.1.82-alpha",

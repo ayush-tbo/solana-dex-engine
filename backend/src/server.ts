@@ -1,5 +1,8 @@
 import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
+import cors from '@fastify/cors';
+import staticFiles from '@fastify/static';
+import path from 'path';
 import { env } from './config/environment';
 import { logger } from './utils/logger';
 import { disconnectDatabases, checkDatabaseHealth, checkRedisHealth, redis } from './config/database';
@@ -22,6 +25,18 @@ const fastify = Fastify({
   requestIdLogLabel: 'reqId',
   disableRequestLogging: false,
   requestTimeout: 30000,
+});
+
+// Register CORS
+fastify.register(cors, {
+  origin: true, // Allow all origins for development
+  credentials: true,
+});
+
+// Register static file serving for frontend
+fastify.register(staticFiles, {
+  root: path.join(__dirname, '../../frontend'),
+  prefix: '/',
 });
 
 // Register WebSocket plugin

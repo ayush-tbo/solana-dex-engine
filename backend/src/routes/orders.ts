@@ -10,10 +10,10 @@ import { OrderStatus } from '@prisma/client';
 
 export async function registerOrderRoutes(fastify: FastifyInstance) {
   /**
-   * POST /api/orders/execute
-   * Execute a new market order
+   * POST /api/orders (alias for /execute)
+   * Submit a new market order
    */
-  fastify.post('/execute', async (request: FastifyRequest, reply: FastifyReply) => {
+  const orderHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     const input = validateInput(executeOrderSchema, request.body);
 
     const orderId = uuidv4();
@@ -58,7 +58,11 @@ export async function registerOrderRoutes(fastify: FastifyInstance) {
     };
 
     reply.code(201).send(response);
-  });
+  };
+
+  // Register both POST /api/orders and POST /api/orders/execute
+  fastify.post('/', orderHandler);
+  fastify.post('/execute', orderHandler);
 
   /**
    * GET /api/orders/:orderId

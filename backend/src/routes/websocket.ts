@@ -22,20 +22,24 @@ export async function registerWebSocketRoutes(fastify: FastifyInstance) {
         timestamp: Date.now(),
       };
 
-      connection.socket.send(JSON.stringify(confirmationMessage));
+      // Access the actual WebSocket through connection.socket
+      const socket = connection.socket || connection;
+      socket.send(JSON.stringify(confirmationMessage));
 
       // Register connection with WebSocket manager
+      // Create a connection object with socket property for compatibility
+      const connectionWrapper = connection.socket ? connection : { socket: connection };
       if (fastify.services?.wsManager) {
-        fastify.services.wsManager.addConnection(orderId, connection);
+        fastify.services.wsManager.addConnection(orderId, connectionWrapper);
       }
 
       // Handle incoming messages (ping/pong for keep-alive)
-      connection.socket.on('message', (message: Buffer) => {
+      socket.on('message', (message: Buffer) => {
         try {
           const data = JSON.parse(message.toString());
 
           if (data.type === 'ping') {
-            connection.socket.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+            socket.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
           }
         } catch (error) {
           logger.error({ error, orderId }, 'Failed to parse WebSocket message');
@@ -43,16 +47,16 @@ export async function registerWebSocketRoutes(fastify: FastifyInstance) {
       });
 
       // Handle disconnection
-      connection.socket.on('close', () => {
+      socket.on('close', () => {
         logger.info({ orderId }, 'WebSocket client disconnected');
 
         if (fastify.services?.wsManager) {
-          fastify.services.wsManager.removeConnection(orderId, connection);
+          fastify.services.wsManager.removeConnection(orderId, connectionWrapper);
         }
       });
 
       // Handle errors
-      connection.socket.on('error', (error: Error) => {
+      socket.on('error', (error: Error) => {
         logger.error({ error, orderId }, 'WebSocket error');
       });
     }
