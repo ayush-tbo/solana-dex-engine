@@ -24,8 +24,10 @@ export async function registerWebSocketRoutes(fastify: FastifyInstance) {
 
       connection.socket.send(JSON.stringify(confirmationMessage));
 
-      // TODO: Register connection with WebSocket manager (Phase 2)
-      // wsManager.addConnection(orderId, connection);
+      // Register connection with WebSocket manager
+      if (fastify.services?.wsManager) {
+        fastify.services.wsManager.addConnection(orderId, connection);
+      }
 
       // Handle incoming messages (ping/pong for keep-alive)
       connection.socket.on('message', (message: Buffer) => {
@@ -43,8 +45,10 @@ export async function registerWebSocketRoutes(fastify: FastifyInstance) {
       // Handle disconnection
       connection.socket.on('close', () => {
         logger.info({ orderId }, 'WebSocket client disconnected');
-        // TODO: Remove connection from manager
-        // wsManager.removeConnection(orderId, connection);
+
+        if (fastify.services?.wsManager) {
+          fastify.services.wsManager.removeConnection(orderId, connection);
+        }
       });
 
       // Handle errors

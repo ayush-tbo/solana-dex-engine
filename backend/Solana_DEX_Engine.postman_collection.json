@@ -1,0 +1,209 @@
+{
+  "info": {
+    "name": "Solana DEX Order Execution Engine",
+    "description": "API collection for testing the Solana DEX order execution engine with real-time WebSocket updates",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["health"]
+        },
+        "description": "Check if the server is running"
+      }
+    },
+    {
+      "name": "Submit Market Order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Save orderId for subsequent requests",
+              "if (pm.response.code === 201) {",
+              "    const response = pm.response.json();",
+              "    pm.environment.set('orderId', response.orderId);",
+              "    console.log('Order ID saved:', response.orderId);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tokenIn\": \"SOL\",\n  \"tokenOut\": \"USDC\",\n  \"amount\": \"1000000000\",\n  \"slippage\": 0.5,\n  \"userWallet\": \"9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/orders",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "orders"]
+        },
+        "description": "Submit a new market order for immediate execution. This will:\n1. Create order in database (PENDING)\n2. Add to processing queue\n3. Fetch quotes from Raydium & Meteora (ROUTING)\n4. Select best quote\n5. Build transaction (BUILDING)\n6. Execute swap (SUBMITTED)\n7. Confirm transaction (CONFIRMED)\n\nAmount is in lamports (1 SOL = 1,000,000,000 lamports)"
+      }
+    },
+    {
+      "name": "Get Order by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders/:orderId",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "orders", ":orderId"],
+          "variable": [
+            {
+              "key": "orderId",
+              "value": "{{orderId}}",
+              "description": "Order ID from environment variable (set automatically after creating an order)"
+            }
+          ]
+        },
+        "description": "Get details of a specific order by ID. Shows current status, selected DEX, executed price, transaction hash, etc."
+      }
+    },
+    {
+      "name": "List Orders (All)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders?limit=10&offset=0",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "orders"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "10",
+              "description": "Number of orders to return (1-100)"
+            },
+            {
+              "key": "offset",
+              "value": "0",
+              "description": "Number of orders to skip"
+            }
+          ]
+        },
+        "description": "List all orders with pagination"
+      }
+    },
+    {
+      "name": "List Orders (By Status)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders?status=CONFIRMED&limit=10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "orders"],
+          "query": [
+            {
+              "key": "status",
+              "value": "CONFIRMED",
+              "description": "Filter by status: PENDING, ROUTING, BUILDING, SUBMITTED, CONFIRMED, FAILED"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "description": "List orders filtered by status"
+      }
+    },
+    {
+      "name": "List Orders (By User Wallet)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders?userWallet=9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin&limit=10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "orders"],
+          "query": [
+            {
+              "key": "userWallet",
+              "value": "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
+              "description": "Filter by user wallet address"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "description": "List orders for a specific user wallet"
+      }
+    },
+    {
+      "name": "Submit Multiple Orders (Concurrent Test)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Generate random amount between 0.1 and 10 SOL",
+              "const lamports = Math.floor((Math.random() * 9.9 + 0.1) * 1000000000);",
+              "pm.variables.set('randomAmount', lamports);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tokenIn\": \"SOL\",\n  \"tokenOut\": \"USDC\",\n  \"amount\": \"{{randomAmount}}\",\n  \"slippage\": 0.5,\n  \"userWallet\": \"9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/orders",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "orders"]
+        },
+        "description": "Use this request to test concurrent order processing. \n\nHow to test:\n1. Use Postman Runner to run this request 5-10 times\n2. Set delay to 0ms between requests\n3. Watch the queue process 10 orders concurrently\n4. Check logs to see DEX routing decisions\n\nEach request generates a random amount between 0.1 and 10 SOL"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

@@ -2,13 +2,18 @@ import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
 import { env } from './config/environment';
 import { logger } from './utils/logger';
-import { disconnectDatabases, checkDatabaseHealth, checkRedisHealth } from './config/database';
-import { testBlockchainConnection } from './config/blockchain';
+import { disconnectDatabases, checkDatabaseHealth, checkRedisHealth, redis } from './config/database';
+import { testBlockchainConnection, connection, getWallet } from './config/blockchain';
 import type { HealthCheckResponse } from './types';
 
 // Import routes
 import { registerOrderRoutes } from './routes/orders';
 import { registerWebSocketRoutes } from './routes/websocket';
+
+// Import services
+import { TransactionService, WebSocketManager, OrderProcessor } from './services';
+// Use mock DEX router for now (switch to real implementation later)
+import { DexRouter } from './services/dex-router-mock';
 
 const fastify = Fastify({
   logger: logger,
@@ -66,9 +71,27 @@ fastify.get('/live', async (_request, reply) => {
   reply.code(200).send({ status: 'alive' });
 });
 
+// Initialize services (will be done in start function)
+let services: {
+  transactionService: TransactionService;
+  dexRouter: DexRouter;
+  wsManager: WebSocketManager;
+  orderProcessor: OrderProcessor;
+} | null = null;
+
 // Register application routes
-fastify.register(registerOrderRoutes, { prefix: '/api/orders' });
-fastify.register(registerWebSocketRoutes, { prefix: '/ws' });
+fastify.register(async (instance) => {
+  // Decorate fastify with services
+  instance.decorate('services', services);
+
+  await registerOrderRoutes(instance);
+}, { prefix: '/api/orders' });
+
+fastify.register(async (instance) => {
+  instance.decorate('services', services);
+
+  await registerWebSocketRoutes(instance);
+}, { prefix: '/ws' });
 
 // Global error handler
 fastify.setErrorHandler((error, request, reply) => {
@@ -94,6 +117,18 @@ const gracefulShutdown = async (signal: string) => {
   logger.info(`Received ${signal}, starting graceful shutdown`);
 
   try {
+    // Close order processor
+    if (services?.orderProcessor) {
+      await services.orderProcessor.close();
+      logger.info('Order processor closed');
+    }
+
+    // Close WebSocket manager
+    if (services?.wsManager) {
+      services.wsManager.closeAll();
+      logger.info('WebSocket manager closed');
+    }
+
     await fastify.close();
     logger.info('Fastify server closed');
 
@@ -143,6 +178,29 @@ const start = async () => {
     if (!blockchainHealth) {
       logger.warn('Blockchain connection failed, but continuing startup');
     }
+
+    // Initialize services
+    logger.info('Initializing services...');
+
+    const wallet = getWallet();
+    const transactionService = new TransactionService(connection);
+    const dexRouter = new DexRouter(connection, wallet, transactionService);
+    const wsManager = new WebSocketManager();
+    const orderProcessor = new OrderProcessor(dexRouter, wsManager, redis);
+
+    // Initialize DEX Router
+    await dexRouter.initialize();
+    logger.info('DEX Router initialized');
+
+    // Store services globally
+    services = {
+      transactionService,
+      dexRouter,
+      wsManager,
+      orderProcessor,
+    };
+
+    logger.info('All services initialized successfully');
 
     // Start server
     await fastify.listen({

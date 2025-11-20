@@ -34,16 +34,21 @@ export async function registerOrderRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // TODO: Submit to order processing queue (Phase 2)
-    // await orderProcessor.submitOrder({
-    //   orderId,
-    //   tokenIn: input.tokenIn,
-    //   tokenOut: input.tokenOut,
-    //   amount: input.amount,
-    //   slippage: input.slippage || env.DEFAULT_SLIPPAGE,
-    //   userWallet,
-    //   timestamp: Date.now(),
-    // });
+    // Submit to order processing queue
+    if (fastify.services?.orderProcessor) {
+      await fastify.services.orderProcessor.submitOrder({
+        orderId,
+        tokenIn: input.tokenIn,
+        tokenOut: input.tokenOut,
+        amount: input.amount,
+        slippage: input.slippage || env.DEFAULT_SLIPPAGE,
+        userWallet,
+        timestamp: Date.now(),
+      });
+      logger.info({ orderId }, 'Order submitted to processing queue');
+    } else {
+      logger.warn({ orderId }, 'Order processor not available');
+    }
 
     const response: OrderResponse = {
       orderId: order.orderId,
