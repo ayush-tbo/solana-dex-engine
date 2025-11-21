@@ -63,9 +63,9 @@ wallet.json
 *.key
 *.pem
 
-# Documentation (keep only README.md)
-*.md
-!README.md
+# Documentation - Keep essential docs, ignore archives
+archive_docs/
+backend/archive_docs/
 
 # Misc
 .envrc

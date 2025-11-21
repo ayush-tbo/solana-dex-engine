@@ -3,11 +3,14 @@ import { Redis } from 'ioredis';
 import { OrderStatus, DexType } from '@prisma/client';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
-// Use mock DEX router for now (switch to real implementation later)
-import { DexRouter } from './dex-router-mock';
+import { DexRouter as MockDexRouter } from './dex-router-mock';
+import { DexRouter as HybridDexRouter } from './dex-router-devnet-hybrid';
 import { WebSocketManager } from './websocket-manager';
 import { env } from '../config/environment';
 import type { OrderJobData, OrderStatusUpdate } from '../types';
+
+// Type alias for DexRouter (all implementations share the same interface)
+type DexRouter = MockDexRouter | HybridDexRouter;
 
 export class OrderProcessor {
   private orderQueue: Queue<OrderJobData>;

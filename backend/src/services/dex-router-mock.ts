@@ -354,8 +354,9 @@ export class DexRouter {
     if (tokenAddress === 'So11111111111111111111111111111111111111112') {
       return 'SOL';
     }
-    // USDC address
-    if (tokenAddress === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
+    // USDC address (mainnet or devnet)
+    if (tokenAddress === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ||
+        tokenAddress === '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU') {
       return 'USDC';
     }
     return 'SOL'; // Default

@@ -4,7 +4,7 @@ import { Order } from '../types';
 
 const API_BASE_URL = 'http://localhost:3000';
 const SOL_ADDRESS = 'So11111111111111111111111111111111111111112';
-const USDC_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const USDC_ADDRESS = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'; // Devnet USDC
 
 interface OrderFormProps {
   onOrderSubmit: (order: Order) => void;

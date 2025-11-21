@@ -15,7 +15,7 @@ async function main() {
       orderId: 'test-order-1',
       userWallet: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
       tokenIn: 'So11111111111111111111111111111111111111112', // SOL
-      tokenOut: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+      tokenOut: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU', // USDC (Devnet)
       amountIn: BigInt(1000000000), // 1 SOL
       status: OrderStatus.CONFIRMED,
       selectedDex: DexType.RAYDIUM,
@@ -27,7 +27,7 @@ async function main() {
     {
       orderId: 'test-order-2',
       userWallet: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
-      tokenIn: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+      tokenIn: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU', // USDC (Devnet)
       tokenOut: 'So11111111111111111111111111111111111111112', // SOL
       amountIn: BigInt(10000000), // 10 USDC
       status: OrderStatus.PENDING,

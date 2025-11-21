@@ -15,8 +15,8 @@ import { registerWebSocketRoutes } from './routes/websocket';
 
 // Import services
 import { TransactionService, WebSocketManager, OrderProcessor } from './services';
-// Use mock DEX router for now (switch to real implementation later)
-import { DexRouter } from './services/dex-router-mock';
+import { DexRouter as MockDexRouter } from './services/dex-router-mock';
+import { DexRouter as HybridDexRouter } from './services/dex-router-devnet-hybrid';
 
 const fastify = Fastify({
   logger: logger,
@@ -199,13 +199,24 @@ const start = async () => {
 
     const wallet = getWallet();
     const transactionService = new TransactionService(connection);
-    const dexRouter = new DexRouter(connection, wallet, transactionService);
+
+    // Initialize DEX Router based on environment variable
+    // USE_REAL_DEX=true: Hybrid mode (REAL blockchain transactions on devnet + simulated pools)
+    // USE_REAL_DEX=false: Mock mode (simulated everything, no real transactions)
+    const dexRouter = env.USE_REAL_DEX
+      ? new HybridDexRouter(connection, wallet, transactionService)
+      : new MockDexRouter(connection, wallet, transactionService);
+
+    logger.info({ useRealDex: env.USE_REAL_DEX }, 'Initializing DEX Router...', {
+      mode: env.USE_REAL_DEX ? 'Hybrid (Real blockchain + simulated pools)' : 'Mock (Fully simulated)'
+    });
+
     const wsManager = new WebSocketManager();
     const orderProcessor = new OrderProcessor(dexRouter, wsManager, redis);
 
     // Initialize DEX Router
     await dexRouter.initialize();
-    logger.info('DEX Router initialized');
+    logger.info({ useRealDex: env.USE_REAL_DEX }, 'DEX Router initialized');
 
     // Store services globally
     services = {

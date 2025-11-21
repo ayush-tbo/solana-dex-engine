@@ -43,6 +43,9 @@ const envSchema = z.object({
   // Priority Fees
   PRIORITY_FEE_MICRO_LAMPORTS: z.string().default('50000'),
   COMPUTE_UNIT_LIMIT: z.string().default('400000'),
+
+  // DEX Configuration
+  USE_REAL_DEX: z.string().default('false'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -93,6 +96,9 @@ export const env = {
   // Priority Fees
   PRIORITY_FEE_MICRO_LAMPORTS: parseInt(parsedEnv.data.PRIORITY_FEE_MICRO_LAMPORTS, 10),
   COMPUTE_UNIT_LIMIT: parseInt(parsedEnv.data.COMPUTE_UNIT_LIMIT, 10),
+
+  // DEX Configuration
+  USE_REAL_DEX: parsedEnv.data.USE_REAL_DEX === 'true',
 
   // Helper
   IS_PRODUCTION: parsedEnv.data.NODE_ENV === 'production',

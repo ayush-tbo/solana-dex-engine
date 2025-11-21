@@ -79,11 +79,11 @@ export default function OrderCard({ order }: OrderCardProps) {
           <div className="flex items-center gap-2 text-sm">
             <span className="text-purple-300">TX:</span>
             <a
-              href={`https://solscan.io/tx/${order.txHash}`}
+              href={`https://solscan.io/tx/${order.txHash}?cluster=devnet`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-purple-400 hover:text-purple-300 transition font-mono text-xs"
-              title="Mock transaction - will show 'Not Found' on Solscan until real DEX integration"
+              title="View real transaction on Solana devnet"
             >
               <span>{order.txHash.substring(0, 8)}...</span>
               <ExternalLink className="w-3 h-3" />

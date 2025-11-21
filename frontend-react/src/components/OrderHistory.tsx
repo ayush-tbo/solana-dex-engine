@@ -83,11 +83,11 @@ export default function OrderHistory({ orders }: OrderHistoryProps) {
                     <td className="py-3 px-4 text-sm">
                       {order.txHash ? (
                         <a
-                          href={`https://solscan.io/tx/${order.txHash}`}
+                          href={`https://solscan.io/tx/${order.txHash}?cluster=devnet`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-1 text-purple-400 hover:text-purple-300 transition"
-                          title="Mock transaction - will show 'Not Found' on Solscan until real DEX integration"
+                          title="View real transaction on Solana devnet"
                         >
                           <span className="font-mono">{order.txHash.substring(0, 8)}...</span>
                           <ExternalLink className="w-3 h-3" />
