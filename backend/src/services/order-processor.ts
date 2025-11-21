@@ -86,10 +86,23 @@ export class OrderProcessor {
             message: 'Fetching quotes from DEXs',
           });
 
+          // Small delay to ensure WebSocket message is sent
+          await new Promise(resolve => setTimeout(resolve, 500));
+
           // Step 2: Get quotes from DEXs
           const quotes = await this.dexRouter.getQuotes(tokenIn, tokenOut, BigInt(amount));
 
-          logger.info({ orderId, quoteCount: quotes.length }, 'Received quotes');
+          // Log all quotes for demo visibility
+          logger.info({ orderId }, '📊 Comparing DEX quotes:');
+          quotes.forEach(quote => {
+            logger.info({
+              orderId,
+              dex: quote.dex,
+              outputAmount: quote.outputAmount.toString(),
+              price: quote.price.toFixed(6),
+              fee: `${(quote.fee * 100).toFixed(2)}%`
+            }, `  ${quote.dex} quote`);
+          });
 
           // Step 3: Select best quote
           const bestQuote = this.dexRouter.selectBestQuote(quotes);
@@ -98,7 +111,12 @@ export class OrderProcessor {
             throw new Error('No valid quotes available');
           }
 
-          logger.info({ orderId, selectedDex: bestQuote.dex, price: bestQuote.price }, 'Selected best quote');
+          logger.info({
+            orderId,
+            selectedDex: bestQuote.dex,
+            price: bestQuote.price.toFixed(6),
+            outputAmount: bestQuote.outputAmount.toString()
+          }, `✅ Selected ${bestQuote.dex} (best price)`);
 
           // Save quote history
           await this.saveQuoteHistory(orderId, quotes, bestQuote);
@@ -110,6 +128,9 @@ export class OrderProcessor {
             estimatedOutput: bestQuote.outputAmount.toString(),
           });
 
+          // Small delay to ensure WebSocket message is sent
+          await new Promise(resolve => setTimeout(resolve, 500));
+
           // Step 5: Execute swap
           const result = await this.dexRouter.executeSwap(bestQuote, slippage);
 
@@ -119,6 +140,9 @@ export class OrderProcessor {
           await this.updateOrderStatus(orderId, OrderStatus.SUBMITTED, {
             signature: result.signature,
           });
+
+          // Small delay to ensure WebSocket message is sent
+          await new Promise(resolve => setTimeout(resolve, 500));
 
           // Step 7: Transaction is confirmed (already waited in executeSwap)
           // Update status to CONFIRMED

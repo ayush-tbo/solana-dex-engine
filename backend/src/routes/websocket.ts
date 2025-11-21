@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { logger } from '../utils/logger';
 import type { WebSocketMessage } from '../types';
+import { prisma } from '../config/database';
 
 export async function registerWebSocketRoutes(fastify: FastifyInstance) {
   /**
@@ -15,22 +16,47 @@ export async function registerWebSocketRoutes(fastify: FastifyInstance) {
 
       logger.info({ orderId }, 'WebSocket client connected');
 
+      // Access the actual WebSocket through connection.socket
+      const socket = connection.socket || connection;
+
+      // Get current order status from database
+      try {
+        const order = await prisma.order.findUnique({
+          where: { orderId },
+        });
+
+        if (order) {
+          // Send current status immediately
+          const statusMessage: WebSocketMessage = {
+            type: 'update',
+            orderId,
+            status: order.status,
+            data: {
+              selectedDex: order.selectedDex || undefined,
+              executedPrice: order.executedPrice ? parseFloat(order.executedPrice.toString()) : undefined,
+              txHash: order.txHash || undefined,
+              errorMessage: order.errorMessage || undefined,
+            },
+            timestamp: Date.now(),
+          };
+          socket.send(JSON.stringify(statusMessage));
+          logger.info({ orderId, status: order.status }, 'Sent current order status');
+        }
+      } catch (error) {
+        logger.error({ error, orderId }, 'Failed to fetch order status');
+      }
+
       // Send connection confirmation
       const confirmationMessage: WebSocketMessage = {
         type: 'connected',
         orderId,
         timestamp: Date.now(),
       };
-
-      // Access the actual WebSocket through connection.socket
-      const socket = connection.socket || connection;
       socket.send(JSON.stringify(confirmationMessage));
 
       // Register connection with WebSocket manager
-      // Create a connection object with socket property for compatibility
-      const connectionWrapper = connection.socket ? connection : { socket: connection };
       if (fastify.services?.wsManager) {
-        fastify.services.wsManager.addConnection(orderId, connectionWrapper);
+        fastify.services.wsManager.addConnection(orderId, socket);
       }
 
       // Handle incoming messages (ping/pong for keep-alive)
@@ -51,7 +77,7 @@ export async function registerWebSocketRoutes(fastify: FastifyInstance) {
         logger.info({ orderId }, 'WebSocket client disconnected');
 
         if (fastify.services?.wsManager) {
-          fastify.services.wsManager.removeConnection(orderId, connectionWrapper);
+          fastify.services.wsManager.removeConnection(orderId, socket);
         }
       });
 

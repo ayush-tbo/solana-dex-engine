@@ -20,7 +20,8 @@ export default function ActiveOrders({ orders, onOrderUpdate, onOrderComplete }:
   useEffect(() => {
     // Connect WebSocket for each new order
     orders.forEach(order => {
-      if (!websockets.current.has(order.orderId)) {
+      const existing = websockets.current.get(order.orderId);
+      if (!existing || existing.readyState === WebSocket.CLOSED) {
         connectWebSocket(order.orderId);
       }
     });
@@ -28,58 +29,71 @@ export default function ActiveOrders({ orders, onOrderUpdate, onOrderComplete }:
     // Cleanup disconnected orders
     websockets.current.forEach((ws, orderId) => {
       if (!orders.find(o => o.orderId === orderId)) {
-        ws.close();
+        if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+          ws.close();
+        }
         websockets.current.delete(orderId);
       }
     });
-
-    return () => {
-      // Cleanup all websockets on unmount
-      websockets.current.forEach(ws => ws.close());
-      websockets.current.clear();
-    };
   }, [orders]);
 
   const connectWebSocket = (orderId: string) => {
+    // Check if already connecting/connected
+    const existing = websockets.current.get(orderId);
+    if (existing && (existing.readyState === WebSocket.CONNECTING || existing.readyState === WebSocket.OPEN)) {
+      console.log(`[WS] Already connected to order ${orderId}`);
+      return;
+    }
+
     const ws = new WebSocket(`${WS_BASE_URL}/ws/${orderId}`);
 
     ws.onopen = () => {
-      console.log(`WebSocket connected for order ${orderId}`);
+      console.log(`[WS] Connected to order ${orderId}`);
     };
 
     ws.onmessage = (event) => {
       try {
-        const data: WebSocketMessage = JSON.parse(event.data);
-        console.log(`Order ${orderId} update:`, data);
+        const message: WebSocketMessage = JSON.parse(event.data);
+        console.log(`[WS] Order ${orderId} - Status: ${message.status}`, message);
 
-        if (data.status) {
-          onOrderUpdate(orderId, {
-            status: data.status,
-            selectedDex: data.selectedDex,
-            executedPrice: data.executedPrice?.toString(),
-            txHash: data.txHash,
-            errorMessage: data.errorMessage,
-          });
+        if (message.status) {
+          // Extract data from nested data object or top level
+          const messageData = message.data || {};
+
+          const updates = {
+            status: message.status,
+            selectedDex: messageData.selectedDex || messageData.dex,
+            executedPrice: messageData.executedPrice?.toString(),
+            txHash: messageData.txHash || messageData.signature,
+            errorMessage: messageData.error || messageData.errorMessage,
+          };
+
+          console.log(`[WS] Updating order ${orderId} with:`, updates);
+          onOrderUpdate(orderId, updates);
 
           // If completed or failed, move to history after a delay
-          if (data.status === 'CONFIRMED' || data.status === 'FAILED') {
+          if (message.status === 'CONFIRMED' || message.status === 'FAILED') {
             setTimeout(() => {
+              console.log(`[WS] Moving order ${orderId} to history`);
               onOrderComplete(orderId);
             }, 3000);
           }
         }
       } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
+        console.error(`[WS ERROR] Order ${orderId}:`, error);
       }
     };
 
     ws.onerror = (error) => {
-      console.error(`WebSocket error for order ${orderId}:`, error);
+      console.error(`[WS ERROR] Order ${orderId}:`, error);
     };
 
-    ws.onclose = () => {
-      console.log(`WebSocket closed for order ${orderId}`);
+    ws.onclose = (event) => {
+      console.log(`[WS] Closed for order ${orderId}. Code: ${event.code}, Reason: ${event.reason}`);
       websockets.current.delete(orderId);
+
+      // Don't auto-reconnect - let the order complete naturally
+      // If the order is still active and connection closed unexpectedly, the useEffect will reconnect
     };
 
     websockets.current.set(orderId, ws);

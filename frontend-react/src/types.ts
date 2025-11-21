@@ -34,10 +34,19 @@ export interface WebSocketMessage {
   type: string;
   orderId: string;
   status?: OrderStatus;
-  selectedDex?: DexType;
-  executedPrice?: number;
-  txHash?: string;
-  errorMessage?: string;
-  quotes?: Quote[];
+  data?: {
+    selectedDex?: DexType;
+    dex?: DexType;
+    estimatedPrice?: number;
+    estimatedOutput?: string;
+    executedPrice?: number;
+    executedAmount?: string;
+    signature?: string;
+    txHash?: string;
+    message?: string;
+    error?: string;
+    errorMessage?: string;
+    quotes?: Quote[];
+  };
   timestamp: number;
 }

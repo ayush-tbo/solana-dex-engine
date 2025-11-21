@@ -1,6 +1,6 @@
-import { Connection, clusterApiUrl, Keypair } from '@solana/web3.js';
-import { Raydium, DEVNET_PROGRAM_ID } from '@raydium-io/raydium-sdk-v2';
-import bs58 from 'bs58';
+import { Connection, Keypair } from '@solana/web3.js';
+import { Raydium, DEVNET_PROGRAM_ID, LiquidityPoolInfo } from '@raydium-io/raydium-sdk-v2';
+import * as bs58 from 'bs58';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -18,8 +18,7 @@ async function queryDevnetPools() {
 
   // Load wallet
   const privateKey = process.env.SOLANA_PRIVATE_KEY!;
-  const bs58Module = (bs58.default || bs58) as any;
-  const wallet = Keypair.fromSecretKey(bs58Module.decode(privateKey));
+  const wallet = Keypair.fromSecretKey(bs58.decode(privateKey));
   console.log(`✅ Wallet: ${wallet.publicKey.toBase58()}\n`);
 
   try {
@@ -32,7 +31,6 @@ async function queryDevnetPools() {
       owner: wallet,
       connection,
       cluster: 'devnet',
-      programIds: DEVNET_PROGRAM_ID,
       disableFeatureCheck: true,
       disableLoadToken: true, // Disable Jupiter token fetching
     });
@@ -41,13 +39,14 @@ async function queryDevnetPools() {
 
     // Query all pools from RPC with empty config (gets all)
     console.log('⏳ Fetching all Raydium pools from RPC...');
-    const allPools = await raydium.liquidity.getPoolInfoFromRpc({});
+    const allPools = await raydium.liquidity.getPools();
 
-    console.log(`📊 Found ${allPools.length} Raydium pools on devnet`);
+    console.log(`📊 Found ${Object.keys(allPools).length} Raydium pools on devnet`);
 
-    if (allPools.length > 0) {
+    const poolList = Object.values(allPools);
+    if (poolList.length > 0) {
       console.log('\nFirst 5 pools:');
-      allPools.slice(0, 5).forEach((pool, idx) => {
+      poolList.slice(0, 5).forEach((pool, idx) => {
         console.log(`\n${idx + 1}. Pool ID: ${pool.id}`);
         console.log(`   Token A: ${pool.mintA.mint.toBase58()} (${pool.mintA.decimals} decimals)`);
         console.log(`   Token B: ${pool.mintB.mint.toBase58()} (${pool.mintB.decimals} decimals)`);
@@ -59,12 +58,12 @@ async function queryDevnetPools() {
     // Try to query CPMM pools specifically
     console.log('\n⏳ Querying CPMM pools...');
     try {
-      const cpmmPools = await raydium.api.getCpmmPoolList();
+      const cpmmPools = await raydium.api.getPoolList();
       console.log(`📊 Found ${cpmmPools.length} CPMM pools on devnet`);
 
       if (cpmmPools.length > 0) {
         console.log('\nFirst 3 CPMM pools:');
-        cpmmPools.slice(0, 3).forEach((pool, idx) => {
+        cpmmPools.slice(0, 3).forEach((pool: any, idx: number) => {
           console.log(`\n${idx + 1}. Pool: ${pool.id}`);
           console.log(`   Mint A: ${pool.mintA}`);
           console.log(`   Mint B: ${pool.mintB}`);
@@ -90,7 +89,7 @@ async function queryDevnetPools() {
 
     try {
       // Check if pool exists for this pair
-      const matchingPools = allPools.filter(pool => {
+      const matchingPools = poolList.filter((pool: LiquidityPoolInfo) => {
         const hasSOL = pool.mintA.mint.toBase58() === SOL_DEVNET || pool.mintB.mint.toBase58() === SOL_DEVNET;
         const hasUSDC = pool.mintA.mint.toBase58() === USDC_DEVNET || pool.mintB.mint.toBase58() === USDC_DEVNET;
         return hasSOL && hasUSDC;
@@ -98,7 +97,7 @@ async function queryDevnetPools() {
 
       if (matchingPools.length > 0) {
         console.log(`✅ Found ${matchingPools.length} pool(s) for SOL/USDC`);
-        matchingPools.forEach(pool => {
+        matchingPools.forEach((pool: LiquidityPoolInfo) => {
           console.log(`   Pool ID: ${pool.id}`);
           console.log(`   Reserves: ${pool.mintAmountA.toString()} / ${pool.mintAmountB.toString()}`);
         });
@@ -118,8 +117,8 @@ async function queryDevnetPools() {
     console.log('\n\n📋 Summary:');
     console.log('─'.repeat(60));
 
-    if (allPools.length > 0) {
-      console.log(`✅ Raydium has ${allPools.length} pools on devnet`);
+    if (poolList.length > 0) {
+      console.log(`✅ Raydium has ${poolList.length} pools on devnet`);
       console.log('✅ You can query and use existing pools');
       console.log('✅ Can execute real swaps if tokens are in those pools');
     } else {

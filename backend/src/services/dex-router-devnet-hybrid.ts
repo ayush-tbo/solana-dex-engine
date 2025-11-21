@@ -1,12 +1,9 @@
-import { Connection, Keypair, PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction } from '@solana/web3.js';
-import { createTransferInstruction, getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { Connection, Keypair, Transaction, SystemProgram, sendAndConfirmTransaction } from '@solana/web3.js';
 import { logger } from '../utils/logger';
 import { TransactionService } from './transaction-service';
 import { PoolNotFoundError, BlockchainError, SlippageExceededError } from '../utils/errors';
-import { withRetry } from '../utils/errors';
 import type { Quote, ExecutionResult } from '../types';
 import { env } from '../config/environment';
-import BN from 'bn.js';
 
 /**
  * HYBRID DEX Router for Devnet
@@ -31,7 +28,7 @@ export class DexRouter {
   constructor(
     private connection: Connection,
     private wallet: Keypair,
-    private transactionService: TransactionService
+    _transactionService: TransactionService
   ) {}
 
   /**
@@ -50,10 +47,10 @@ export class DexRouter {
       this.initializeSimulatedPools();
 
       this.initialized = true;
-      logger.info('Hybrid DEX Router initialized successfully for devnet', {
+      logger.info({
         pools: this.pools.size,
         mode: 'Real blockchain + Simulated pools'
-      });
+      }, 'Hybrid DEX Router initialized successfully for devnet');
     } catch (error) {
       logger.error({ error }, 'Failed to initialize Hybrid DEX Router');
       throw new BlockchainError('Failed to initialize Hybrid DEX Router', false);
@@ -100,7 +97,7 @@ export class DexRouter {
       dex: 'METEORA'
     });
 
-    logger.info('Initialized simulated pools', { count: this.pools.size });
+    logger.info({ count: this.pools.size }, 'Initialized simulated pools');
   }
 
   /**
@@ -111,7 +108,7 @@ export class DexRouter {
       throw new BlockchainError('Router not initialized', false);
     }
 
-    logger.info('Getting best quote', { tokenIn, tokenOut, amount: amount.toString() });
+    logger.info({ tokenIn, tokenOut, amount: amount.toString() }, 'Getting best quote');
 
     // Find matching pools
     const quotes: Quote[] = [];
@@ -154,12 +151,12 @@ export class DexRouter {
       current.outputAmount > best.outputAmount ? current : best
     );
 
-    logger.info('Best quote found', {
+    logger.info({
       dex: bestQuote.dex,
       inputAmount: bestQuote.inputAmount.toString(),
       outputAmount: bestQuote.outputAmount.toString(),
       price: bestQuote.price
-    });
+    }, 'Best quote found');
 
     return bestQuote;
   }
@@ -231,16 +228,16 @@ export class DexRouter {
    * Execute swap with REAL blockchain transaction
    * This creates actual on-chain transactions on devnet
    */
-  async executeSwap(quote: Quote, slippage: number = env.DEFAULT_SLIPPAGE): Promise<ExecutionResult> {
+  async executeSwap(quote: Quote, _slippage: number = env.DEFAULT_SLIPPAGE): Promise<ExecutionResult> {
     if (!this.initialized) {
       throw new BlockchainError('Router not initialized', false);
     }
 
-    logger.info('Executing hybrid swap on devnet', {
+    logger.info({
       dex: quote.dex,
       inputAmount: quote.inputAmount.toString(),
       outputAmount: quote.outputAmount.toString()
-    });
+    }, 'Executing hybrid swap on devnet');
 
     try {
       // Create REAL transaction on devnet
@@ -248,15 +245,15 @@ export class DexRouter {
       const transaction = new Transaction();
 
       // Add a memo instruction to record the swap details
-      const swapMemo = JSON.stringify({
-        type: 'DEX_SWAP',
-        dex: quote.dex,
-        inputAmount: quote.inputAmount.toString(),
-        outputAmount: quote.outputAmount.toString(),
-        price: quote.price,
-        poolId: quote.poolId,
-        timestamp: Date.now()
-      });
+      // const swapMemo = JSON.stringify({
+      //   type: 'DEX_SWAP',
+      //   dex: quote.dex,
+      //   inputAmount: quote.inputAmount.toString(),
+      //   outputAmount: quote.outputAmount.toString(),
+      //   price: quote.price,
+      //   poolId: quote.poolId,
+      //   timestamp: Date.now()
+      // });
 
       transaction.add(
         SystemProgram.transfer({
@@ -284,10 +281,10 @@ export class DexRouter {
         }
       );
 
-      logger.info('Transaction confirmed on devnet', {
+      logger.info({
         signature,
         explorerUrl: `https://solscan.io/tx/${signature}?cluster=devnet`
-      });
+      }, 'Transaction confirmed on devnet');
 
       // Update simulated pool reserves (for realistic state management)
       const pool = this.pools.get(quote.poolId);

@@ -18,12 +18,15 @@ import { TransactionService, WebSocketManager, OrderProcessor } from './services
 import { DexRouter as MockDexRouter } from './services/dex-router-mock';
 import { DexRouter as HybridDexRouter } from './services/dex-router-devnet-hybrid';
 
+// Choose which router to use
+type DexRouter = MockDexRouter | HybridDexRouter;
+
 const fastify = Fastify({
   logger: logger,
   trustProxy: true,
   requestIdHeader: 'x-request-id',
   requestIdLogLabel: 'reqId',
-  disableRequestLogging: false,
+  disableRequestLogging: true, // Disable HTTP request logs for cleaner demo output
   requestTimeout: 30000,
 });
 

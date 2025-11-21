@@ -12,10 +12,10 @@ export class WebSocketManager {
   /**
    * Add a new WebSocket connection
    */
-  addConnection(orderId: string, connection: any): void {
+  addConnection(orderId: string, socket: any): void {
     const client: ClientConnection = {
       orderId,
-      socket: connection,
+      socket: socket,
       isAlive: true,
       connectedAt: new Date(),
     };
@@ -27,13 +27,8 @@ export class WebSocketManager {
     this.clients.get(orderId)!.add(client);
 
     // Setup pong handler
-    connection.socket.on('pong', () => {
+    socket.on('pong', () => {
       client.isAlive = true;
-    });
-
-    // Setup close handler
-    connection.socket.on('close', () => {
-      this.removeConnection(orderId, connection);
     });
 
     logger.info({ orderId, totalConnections: this.clients.get(orderId)!.size }, 'WebSocket client added');
