@@ -22,5 +22,5 @@
     "types": ["node", "jest"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "src/tests/**/*", "src/scripts/**/*"]
+  "exclude": ["node_modules", "dist", "src/scripts/**/*"]
 }

@@ -1,0 +1,262 @@
+{
+	"info": {
+		"_postman_id": "solana-dex-api-2025",
+		"name": "Solana DEX Engine API",
+		"description": "Complete API collection for Solana DEX aggregator with real-time order execution",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/health",
+					"host": ["{{BASE_URL}}"],
+					"path": ["health"]
+				},
+				"description": "Check API health and service status (database, redis, blockchain)"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Order",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tokenIn\": \"So11111111111111111111111111111111111111112\",\n  \"tokenOut\": \"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU\",\n  \"amount\": \"1000000000\",\n  \"slippage\": 0.01,\n  \"userWallet\": \"9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/orders",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "orders"]
+				},
+				"description": "Submit a new swap order. Returns orderId and WebSocket URL for real-time updates."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Order by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/api/orders/:orderId",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "orders", ":orderId"],
+					"variable": [
+						{
+							"key": "orderId",
+							"value": "your-order-id-here"
+						}
+					]
+				},
+				"description": "Get detailed information about a specific order including quote history"
+			},
+			"response": []
+		},
+		{
+			"name": "List All Orders",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/api/orders?limit=50&offset=0",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "orders"],
+					"query": [
+						{
+							"key": "limit",
+							"value": "50"
+						},
+						{
+							"key": "offset",
+							"value": "0"
+						}
+					]
+				},
+				"description": "Get paginated list of all orders with optional filtering"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Multiple Orders (Stress Test)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tokenIn\": \"So11111111111111111111111111111111111111112\",\n  \"tokenOut\": \"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU\",\n  \"amount\": \"5000000000\",\n  \"slippage\": 0.01,\n  \"userWallet\": \"9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/orders",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "orders"]
+				},
+				"description": "Submit multiple orders rapidly to test queue processing (run this 5-10 times)"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Orders by Status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/api/orders?status=CONFIRMED&limit=10",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "orders"],
+					"query": [
+						{
+							"key": "status",
+							"value": "CONFIRMED"
+						},
+						{
+							"key": "limit",
+							"value": "10"
+						}
+					]
+				},
+				"description": "Filter orders by status (PENDING, ROUTING, BUILDING, SUBMITTED, CONFIRMED, FAILED)"
+			},
+			"response": []
+		},
+		{
+			"name": "Test SOL → USDC Swap",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tokenIn\": \"So11111111111111111111111111111111111111112\",\n  \"tokenOut\": \"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU\",\n  \"amount\": \"2000000000\",\n  \"slippage\": 0.01,\n  \"userWallet\": \"9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/orders",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "orders"]
+				},
+				"description": "Test SOL to USDC swap (2 SOL)"
+			},
+			"response": []
+		},
+		{
+			"name": "Test USDC → SOL Swap",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tokenIn\": \"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU\",\n  \"tokenOut\": \"So11111111111111111111111111111111111111112\",\n  \"amount\": \"100000000\",\n  \"slippage\": 0.01,\n  \"userWallet\": \"9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/orders",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "orders"]
+				},
+				"description": "Test USDC to SOL swap (100 USDC)"
+			},
+			"response": []
+		},
+		{
+			"name": "Test High Slippage Order",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tokenIn\": \"So11111111111111111111111111111111111111112\",\n  \"tokenOut\": \"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU\",\n  \"amount\": \"1000000000\",\n  \"slippage\": 0.05,\n  \"userWallet\": \"9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/orders",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "orders"]
+				},
+				"description": "Test order with high slippage tolerance (5%)"
+			},
+			"response": []
+		},
+		{
+			"name": "Invalid Order - Missing Amount",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tokenIn\": \"So11111111111111111111111111111111111111112\",\n  \"tokenOut\": \"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU\",\n  \"slippage\": 0.01,\n  \"userWallet\": \"9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/orders",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "orders"]
+				},
+				"description": "Test validation - should return 400 error for missing amount"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "BASE_URL",
+			"value": "https://solana-dex-backend-production.up.railway.app",
+			"type": "string"
+		},
+		{
+			"key": "LOCAL_URL",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
+}

@@ -224,4 +224,87 @@ export class WebSocketManager {
 
     logger.info('All WebSocket connections closed');
   }
+
+  /**
+   * Get all connections for a specific order (for testing)
+   */
+  getConnections(orderId: string): any[] {
+    const connections = this.clients.get(orderId);
+    if (!connections) return [];
+    return Array.from(connections).map((client) => client.socket);
+  }
+
+  /**
+   * Broadcast a generic message to all connections for an order (for testing)
+   */
+  broadcast(orderId: string, message: any): void {
+    const connections = this.clients.get(orderId);
+    if (!connections || connections.size === 0) return;
+
+    const messageStr = JSON.stringify(message);
+    const staleConnections: ClientConnection[] = [];
+
+    connections.forEach((client) => {
+      try {
+        const socket = client.socket.socket || client.socket;
+
+        // Check if socket is open
+        if (socket.readyState === 1) {
+          // WebSocket.OPEN
+          socket.send(messageStr);
+        } else {
+          // Mark for removal
+          staleConnections.push(client);
+        }
+      } catch (error) {
+        logger.error({ error, orderId }, 'Failed to broadcast message');
+        staleConnections.push(client);
+      }
+    });
+
+    // Remove stale connections
+    staleConnections.forEach((client) => {
+      connections.delete(client);
+    });
+
+    // Clean up empty sets
+    if (connections.size === 0) {
+      this.clients.delete(orderId);
+    }
+  }
+
+  /**
+   * Close all connections for a specific order
+   */
+  closeConnectionsForOrder(orderId: string): void {
+    const connections = this.clients.get(orderId);
+    if (!connections) return;
+
+    connections.forEach((client) => {
+      try {
+        const socket = client.socket.socket || client.socket;
+        socket.close(1000, 'Order complete');
+      } catch (error) {
+        logger.error({ error, orderId }, 'Failed to close connection');
+      }
+    });
+
+    this.clients.delete(orderId);
+    logger.info({ orderId }, 'Closed all connections for order');
+  }
+
+  /**
+   * Get statistics about connections
+   */
+  getStats(): { totalConnections: number; totalOrders: number } {
+    let totalConnections = 0;
+    this.clients.forEach((connections) => {
+      totalConnections += connections.size;
+    });
+
+    return {
+      totalConnections,
+      totalOrders: this.clients.size,
+    };
+  }
 }
