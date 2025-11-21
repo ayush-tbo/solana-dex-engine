@@ -32,6 +32,23 @@ npm run dev
 - Bull Board: http://localhost:3030
 - WebSocket: ws://localhost:3001
 
+## 🌐 Deploy to Production (FREE!)
+
+Deploy your app to the cloud in 15 minutes using Railway + Vercel:
+
+```bash
+# Quick deploy
+./deploy.sh
+```
+
+**Or follow the guide**: [QUICK_DEPLOY.md](QUICK_DEPLOY.md) | [Full Guide](DEPLOYMENT_GUIDE.md)
+
+**Free hosting includes**:
+- Railway: Backend + PostgreSQL + Redis
+- Vercel: Frontend with CDN
+- Custom domains supported
+- Auto-deploy on git push
+
 ## ✨ Features
 
 - ✅ **Real Blockchain Transactions** - Creates actual transactions on Solana devnet ([proof](PROOF_OF_REAL_TRANSACTIONS.md))
