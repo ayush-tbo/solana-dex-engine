@@ -23,8 +23,8 @@ Production-ready Solana DEX aggregator with real blockchain transactions on devn
 
 ## 🎬 Demo Video
 
-[Link to demo video showing:]
-- Submitting 3-5 orders simultaneously
+  https://youtu.be/jcj-kNiEnCM
+- Submitting 10 orders simultaneously
 - Real-time WebSocket status updates (PENDING → ROUTING → BUILDING → SUBMITTED → CONFIRMED)
 - DEX routing decisions in logs (Raydium vs Meteora comparison)
 - Queue processing multiple orders
@@ -470,25 +470,10 @@ For questions or feedback:
 
 ---
 
-**Built with ❤️ using Solana, React, and TypeScript**
 
 *Production-ready DEX aggregator with real blockchain transactions.*
 
 ---
-
-## 📸 Screenshots
-
-### Order Submission
-![Order Form with token selection and amount input]
-
-### Live Tracking
-![Active orders with WebSocket real-time status updates]
-
-### Order History
-![Completed orders with Solscan transaction links]
-
-### DEX Routing Logs
-![Backend logs showing Raydium vs Meteora quote comparison]
 
 ---
 
