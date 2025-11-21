@@ -1,0 +1,10 @@
+node_modules
+.env
+.env.local
+*.log
+coverage
+.vscode
+.idea
+*.md
+!README.md
+archive_docs
