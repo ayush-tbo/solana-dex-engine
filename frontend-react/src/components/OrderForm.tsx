@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Send, Zap } from 'lucide-react';
 import { Order } from '../types';
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const SOL_ADDRESS = 'So11111111111111111111111111111111111111112';
 const USDC_ADDRESS = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'; // Devnet USDC
 
