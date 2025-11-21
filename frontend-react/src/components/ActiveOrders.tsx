@@ -3,8 +3,10 @@ import { Activity, TrendingUp } from 'lucide-react';
 import { Order, WebSocketMessage } from '../types';
 import OrderCard from './OrderCard';
 
-// Use the current host for WebSocket (works with Vite proxy)
-const WS_BASE_URL = window.location.protocol === 'https:'
+// WebSocket URL - use Railway backend in production
+const WS_BASE_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace('https://', 'wss://').replace('http://', 'ws://')
+  : window.location.protocol === 'https:'
   ? `wss://${window.location.host}`
   : `ws://${window.location.host}`;
 

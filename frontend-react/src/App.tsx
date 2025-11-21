@@ -6,7 +6,7 @@ import OrderHistory from './components/OrderHistory';
 import StatsPanel from './components/StatsPanel';
 import { Order } from './types';
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function App() {
   const [activeOrders, setActiveOrders] = useState<Map<string, Order>>(new Map());
